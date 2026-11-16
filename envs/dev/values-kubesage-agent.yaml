@@ -1,7 +1,7 @@
 # CI (ci-agent.yml) updates image.tag on every push to main of m-anishh/kubesage.
 image:
   repository: 135438495833.dkr.ecr.ap-south-1.amazonaws.com/kubesage-agent
-  tag: "be568a9c5b6a123d66d4dbddda859a4efe54076f"
+  tag: "41c1d2377a4f77202db636f7b5bbe60a142d5a36"
 
 config:
   modelId: apac.amazon.nova-lite-v1:0
