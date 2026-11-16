@@ -1,0 +1,28 @@
+# Creates Secret monitoring/grafana-admin from AWS Secrets Manager (kubesage/grafana-admin).
+# A fixed admin secret stops the Grafana chart from generating a new random password on every render.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: grafana-admin
+  namespace: monitoring
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: aws-secrets-manager
+  target:
+    name: grafana-admin
+  data:
+    - secretKey: admin-user
+      remoteRef:
+        key: kubesage/grafana-admin
+        property: admin-user
+    - secretKey: admin-password
+      remoteRef:
+        key: kubesage/grafana-admin
+        property: admin-password
