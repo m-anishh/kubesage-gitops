@@ -1,0 +1,20 @@
+# CI (ci-apps.yml) updates image.tag on every push to main of m-anishh/kubesage.
+image:
+  repository: 135438495833.dkr.ecr.ap-south-1.amazonaws.com/orders-api
+  tag: "replace-me-ci-sets-this"
+
+env:
+  PAYMENTS_URL: http://payments-api.dev.svc:8000
+
+# Commit a change here to start an incident.
+faults:
+  crash: false
+  memoryLeak: false
+  latencyMs: 0
+  errorRate: 0
+  logInjection: false
+
+loadgen:
+  enabled: true
+  path: /orders
+  intervalSeconds: 1

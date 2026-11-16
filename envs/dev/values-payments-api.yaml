@@ -1,0 +1,17 @@
+# CI (ci-apps.yml) updates image.tag on every push to main of m-anishh/kubesage.
+image:
+  repository: 135438495833.dkr.ecr.ap-south-1.amazonaws.com/payments-api
+  tag: "replace-me-ci-sets-this"
+
+# Commit a change here to start an incident.
+# Demo: set memoryLeak: true -> OOMKilled -> KubeSageOOMKilled -> agent opens an issue.
+faults:
+  crash: false
+  memoryLeak: false
+  latencyMs: 0
+  errorRate: 0
+  logInjection: false
+
+# orders-api's load generator already calls payments-api on every request.
+loadgen:
+  enabled: false

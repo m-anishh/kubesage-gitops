@@ -1,0 +1,71 @@
+# Grafana's sidecar loads every ConfigMap labelled grafana_dashboard=1 as a dashboard.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubesage-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  kubesage.json: |
+    {
+      "title": "KubeSage",
+      "uid": "kubesage",
+      "timezone": "browser",
+      "refresh": "15s",
+      "time": { "from": "now-1h", "to": "now" },
+      "schemaVersion": 39,
+      "panels": [
+        {
+          "type": "timeseries", "title": "Request rate per service", "id": 1,
+          "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "reqps" } },
+          "targets": [{ "refId": "A", "legendFormat": "{{service}}",
+            "expr": "sum by (service) (rate(http_requests_total{namespace=\"dev\"}[2m]))" }]
+        },
+        {
+          "type": "timeseries", "title": "P95 latency per service", "id": 2,
+          "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "s",
+            "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } },
+          "targets": [{ "refId": "A", "legendFormat": "{{service}}",
+            "expr": "histogram_quantile(0.95, sum by (le, service) (rate(http_request_duration_seconds_bucket{namespace=\"dev\"}[2m])))" }]
+        },
+        {
+          "type": "timeseries", "title": "5xx error rate per service", "id": 3,
+          "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 } },
+          "targets": [{ "refId": "A", "legendFormat": "{{service}}",
+            "expr": "sum by (service) (rate(http_requests_total{namespace=\"dev\", status=\"5xx\"}[2m])) / sum by (service) (rate(http_requests_total{namespace=\"dev\"}[2m]))" }]
+        },
+        {
+          "type": "stat", "title": "Pod restarts in dev (1h)", "id": 4,
+          "gridPos": { "x": 12, "y": 8, "w": 6, "h": 8 },
+          "targets": [{ "refId": "A",
+            "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"dev\"}[1h]))" }]
+        },
+        {
+          "type": "stat", "title": "Agent investigations (24h)", "id": 5,
+          "gridPos": { "x": 18, "y": 8, "w": 6, "h": 8 },
+          "targets": [{ "refId": "A",
+            "expr": "sum(increase(kubesage_investigations_total[24h]))" }]
+        },
+        {
+          "type": "timeseries", "title": "Agent LLM tokens per hour", "id": 6,
+          "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+          "targets": [{ "refId": "A", "legendFormat": "{{kind}}",
+            "expr": "sum by (kind) (increase(kubesage_llm_tokens_total[1h]))" }]
+        },
+        {
+          "type": "timeseries", "title": "Agent investigation duration (P50 / P95)", "id": 7,
+          "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "s" } },
+          "targets": [
+            { "refId": "A", "legendFormat": "p50",
+              "expr": "histogram_quantile(0.5, sum by (le) (rate(kubesage_investigation_duration_seconds_bucket[1h])))" },
+            { "refId": "B", "legendFormat": "p95",
+              "expr": "histogram_quantile(0.95, sum by (le) (rate(kubesage_investigation_duration_seconds_bucket[1h])))" }
+          ]
+        }
+      ]
+    }

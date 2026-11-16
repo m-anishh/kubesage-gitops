@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubesage
+---
+# Creates Secret kubesage/github-token (key: token) from AWS Secrets Manager.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: github-token
+  namespace: kubesage
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: aws-secrets-manager
+  target:
+    name: github-token
+  data:
+    - secretKey: token
+      remoteRef:
+        key: kubesage/github-token

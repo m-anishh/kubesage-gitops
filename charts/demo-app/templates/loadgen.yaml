@@ -1,0 +1,36 @@
+{{- if .Values.loadgen.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "demo-app.name" . }}-loadgen
+  labels:
+    app.kubernetes.io/name: {{ include "demo-app.name" . }}-loadgen
+    app.kubernetes.io/part-of: kubesage-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "demo-app.name" . }}-loadgen
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "demo-app.name" . }}-loadgen
+        app.kubernetes.io/part-of: kubesage-demo
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+      containers:
+        - name: curl
+          image: curlimages/curl:8.11.1
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              while true; do
+                curl -s -o /dev/null --max-time 10 http://{{ include "demo-app.name" . }}:{{ .Values.port }}{{ .Values.loadgen.path }}
+                sleep {{ .Values.loadgen.intervalSeconds }}
+              done
+          resources:
+            requests: { cpu: 5m, memory: 8Mi }
+            limits: { memory: 32Mi }
+{{- end }}

@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubesage-agent
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/m-anishh/kubesage-gitops.git
+    targetRevision: main
+    path: charts/kubesage-agent
+    helm:
+      releaseName: kubesage-agent
+      valueFiles:
+        - ../../envs/dev/values-kubesage-agent.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kubesage
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

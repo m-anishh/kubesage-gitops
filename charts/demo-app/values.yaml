@@ -1,0 +1,36 @@
+image:
+  repository: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+port: 8000
+
+# Extra environment variables (name: value).
+env: {}
+
+# Fault switches: commit a change here to start an incident.
+faults:
+  crash: false # FAULT_CRASH: exit on start -> CrashLoopBackOff
+  memoryLeak: false # FAULT_MEMORY_LEAK: grow memory -> OOMKilled
+  latencyMs: 0 # FAULT_LATENCY_MS: slow responses -> HighP95Latency
+  errorRate: 0 # FAULT_ERROR_RATE: share of requests that return 500 -> High5xxRate
+  logInjection: false # FAULT_LOG_INJECTION: logs a prompt-injection line
+
+# Limits are what make OOMKilled happen.
+resources:
+  requests:
+    cpu: 20m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+
+serviceMonitor:
+  enabled: true
+  interval: 15s
+
+# Steady traffic, so the latency and 5xx alerts have requests to measure.
+loadgen:
+  enabled: false
+  path: /orders
+  intervalSeconds: 1

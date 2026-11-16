@@ -1,0 +1,5 @@
+apiVersion: v2
+name: kubesage-agent
+description: KubeSage AI incident agent with read-only RBAC, plus an in-cluster Qdrant for runbook search
+type: application
+version: 0.1.0

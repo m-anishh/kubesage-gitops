@@ -1,0 +1,40 @@
+image:
+  repository: ""
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Settings only. The GitHub token comes from the Secret that External Secrets creates;
+# Bedrock access comes from the pod's IAM role (EKS Pod Identity). No keys here.
+config:
+  awsRegion: ap-south-1
+  modelId: apac.amazon.nova-lite-v1:0
+  embedModelId: amazon.titan-embed-text-v2:0
+  issuesRepo: m-anishh/kubesage
+  gitopsRepo: m-anishh/kubesage-gitops
+  allowedNamespaces: dev
+  maxTurns: "6"
+  dryRun: "false"
+
+githubTokenSecret: github-token
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 192Mi
+  limits:
+    memory: 512Mi
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+
+# Qdrant with emptyDir storage: the plan has no EBS CSI driver, and runbooks are re-indexed at every start.
+qdrant:
+  enabled: true
+  image: qdrant/qdrant:v1.20.1
+  resources:
+    requests:
+      cpu: 20m
+      memory: 128Mi
+    limits:
+      memory: 512Mi

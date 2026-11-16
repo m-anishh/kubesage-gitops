@@ -1,0 +1,16 @@
+# ClusterIP only. Never LoadBalancer: a load balancer made by Kubernetes is outside Terraform,
+# keeps billing and blocks terraform destroy. Use kubectl port-forward instead.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "demo-app.name" . }}
+  labels:
+    {{- include "demo-app.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "demo-app.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.port }}
+      targetPort: http

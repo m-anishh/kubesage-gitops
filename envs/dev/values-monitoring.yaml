@@ -1,0 +1,123 @@
+# kube-prometheus-stack, trimmed for a single 8 GB node. No persistent volumes anywhere.
+
+prometheus:
+  prometheusSpec:
+    retention: 2d
+    scrapeInterval: 15s
+    evaluationInterval: 15s
+    # Pick up ServiceMonitors and rules from every namespace, not only ones labelled for this release.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    resources:
+      requests: { cpu: 100m, memory: 512Mi }
+      limits: { memory: 1536Mi }
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests: { cpu: 10m, memory: 32Mi }
+      limits: { memory: 128Mi }
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      # Default receiver does nothing: the always-firing Watchdog and other platform alerts
+      # would otherwise reach the agent and cost Bedrock tokens.
+      receiver: "null"
+      group_by: [alertname, namespace, pod]
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      routes:
+        - matchers: ['namespace="dev"', 'alertname=~"KubeSage.*"']
+          receiver: kubesage
+    receivers:
+      - name: "null"
+      - name: kubesage
+        webhook_configs:
+          - url: http://kubesage-agent.kubesage.svc:8000/webhook/alertmanager
+            send_resolved: true
+
+grafana:
+  persistence:
+    enabled: false
+  resources:
+    requests: { cpu: 20m, memory: 128Mi }
+    limits: { memory: 256Mi }
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+
+nodeExporter:
+  enabled: true
+prometheus-node-exporter:
+  resources:
+    requests: { cpu: 10m, memory: 16Mi }
+
+kube-state-metrics:
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+
+prometheusOperator:
+  resources:
+    requests: { cpu: 20m, memory: 64Mi }
+
+# Control-plane components are managed by EKS and cannot be scraped: skip them.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+# Custom fast rules. The built-in KubePodCrashLooping / KubePodNotReady wait ~15 minutes, too slow for a demo.
+# Every alert carries namespace plus pod or service: the agent needs them.
+additionalPrometheusRulesMap:
+  kubesage:
+    groups:
+      - name: kubesage
+        rules:
+          - alert: KubeSageCrashLooping
+            expr: max by (namespace, pod, container) (kube_pod_container_status_waiting_reason{namespace="dev", reason="CrashLoopBackOff"}) == 1
+            for: 1m
+            labels: { severity: warning }
+            annotations:
+              summary: "{{ $labels.namespace }}/{{ $labels.pod }} is in CrashLoopBackOff"
+
+          - alert: KubeSageOOMKilled
+            expr: |
+              (max by (namespace, pod, container) (kube_pod_container_status_last_terminated_reason{namespace="dev", reason="OOMKilled"}) == 1)
+              and on (namespace, pod, container)
+              (increase(kube_pod_container_status_restarts_total{namespace="dev"}[5m]) > 0)
+            for: 0m
+            labels: { severity: warning }
+            annotations:
+              summary: "{{ $labels.namespace }}/{{ $labels.pod }} was OOMKilled"
+
+          - alert: KubeSageImagePullBackOff
+            expr: max by (namespace, pod, container) (kube_pod_container_status_waiting_reason{namespace="dev", reason=~"ImagePullBackOff|ErrImagePull"}) == 1
+            for: 2m
+            labels: { severity: warning }
+            annotations:
+              summary: "{{ $labels.namespace }}/{{ $labels.pod }} cannot pull its image"
+
+          - alert: KubeSageHighP95Latency
+            expr: histogram_quantile(0.95, sum by (le, namespace, service) (rate(http_request_duration_seconds_bucket{namespace="dev"}[5m]))) > 1
+            for: 2m
+            labels: { severity: warning }
+            annotations:
+              summary: "{{ $labels.namespace }}/{{ $labels.service }} P95 latency is {{ $value | humanizeDuration }}"
+
+          - alert: KubeSageHigh5xxRate
+            expr: |
+              sum by (namespace, service) (rate(http_requests_total{namespace="dev", status="5xx"}[5m]))
+                / sum by (namespace, service) (rate(http_requests_total{namespace="dev"}[5m])) > 0.2
+            for: 2m
+            labels: { severity: warning }
+            annotations:
+              summary: "{{ $labels.namespace }}/{{ $labels.service }} 5xx rate is {{ $value | humanizePercentage }}"

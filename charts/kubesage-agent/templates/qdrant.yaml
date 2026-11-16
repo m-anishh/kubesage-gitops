@@ -1,0 +1,58 @@
+{{- if .Values.qdrant.enabled }}
+# A single Qdrant with emptyDir storage. The upstream Qdrant chart always requests a PersistentVolume,
+# which would stay Pending here because the cluster deliberately has no EBS CSI driver.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubesage-qdrant
+  labels:
+    app.kubernetes.io/name: kubesage-qdrant
+    app.kubernetes.io/part-of: kubesage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kubesage-qdrant
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kubesage-qdrant
+        app.kubernetes.io/part-of: kubesage
+    spec:
+      containers:
+        - name: qdrant
+          image: {{ .Values.qdrant.image }}
+          ports:
+            - name: http
+              containerPort: 6333
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.qdrant.resources | nindent 12 }}
+          volumeMounts:
+            - name: storage
+              mountPath: /qdrant/storage
+            - name: snapshots
+              mountPath: /qdrant/snapshots
+      volumes:
+        - name: storage
+          emptyDir: {}
+        - name: snapshots
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubesage-qdrant
+  labels:
+    app.kubernetes.io/name: kubesage-qdrant
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: kubesage-qdrant
+  ports:
+    - name: http
+      port: 6333
+      targetPort: http
+{{- end }}

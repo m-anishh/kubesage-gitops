@@ -1,0 +1,15 @@
+# Alertmanager posts to http://kubesage-agent.kubesage.svc:8000/webhook/alertmanager
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubesage-agent
+  labels:
+    {{- include "kubesage-agent.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "kubesage-agent.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

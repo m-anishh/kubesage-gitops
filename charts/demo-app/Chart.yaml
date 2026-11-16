@@ -1,0 +1,5 @@
+apiVersion: v2
+name: demo-app
+description: orders-api / payments-api demo service with fault switches
+type: application
+version: 0.1.0

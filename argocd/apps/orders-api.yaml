@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: orders-api
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/m-anishh/kubesage-gitops.git
+    targetRevision: main
+    path: charts/demo-app
+    helm:
+      releaseName: orders-api
+      valueFiles:
+        - ../../envs/dev/values-orders-api.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
