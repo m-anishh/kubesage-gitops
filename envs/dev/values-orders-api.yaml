@@ -1,7 +1,7 @@
 # CI (ci-apps.yml) updates image.tag on every push to main of m-anishh/kubesage.
 image:
   repository: 135438495833.dkr.ecr.ap-south-1.amazonaws.com/orders-api
-  tag: "be568a9c5b6a123d66d4dbddda859a4efe54076f"
+  tag: "41c1d2377a4f77202db636f7b5bbe60a142d5a36"
 
 env:
   PAYMENTS_URL: http://payments-api.dev.svc:8000
