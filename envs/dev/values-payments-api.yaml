@@ -7,7 +7,7 @@ image:
 # Demo: set memoryLeak: true -> OOMKilled -> KubeSageOOMKilled -> agent opens an issue.
 faults:
   crash: false
-  memoryLeak: false
+  memoryLeak: true
   latencyMs: 0
   errorRate: 0
   logInjection: false
