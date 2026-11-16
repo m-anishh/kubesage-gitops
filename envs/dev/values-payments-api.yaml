@@ -1,7 +1,7 @@
 # CI (ci-apps.yml) updates image.tag on every push to main of m-anishh/kubesage.
 image:
   repository: 135438495833.dkr.ecr.ap-south-1.amazonaws.com/payments-api
-  tag: "replace-me-ci-sets-this"
+  tag: "be568a9c5b6a123d66d4dbddda859a4efe54076f"
 
 # Commit a change here to start an incident.
 # Demo: set memoryLeak: true -> OOMKilled -> KubeSageOOMKilled -> agent opens an issue.
